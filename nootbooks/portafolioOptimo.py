@@ -71,6 +71,7 @@ class MiPortafolio:
     minima = self.minimizar()
     print(f'Los parametros para divercificar el portafolio es: \n {minima.x.round(4)}')
     return minima.x.round(4)
+  
 
 
 def graficarCurvaRiesgo(r, Nombre_Acciones):  
@@ -87,6 +88,8 @@ def graficarCurvaRiesgo(r, Nombre_Acciones):
   
   plt.plot(volatilidad, rango,'o-',label='Datos')
   plt.plot(p(rango),rango, 'r-', label='Curva ajustada')
+
+  plt.plot(p(rango),rango, 'r-', label='Curva ajustada')
   
   plt.xlabel('Volatilidad')
   plt.ylabel('Retorno Esperado')
@@ -96,9 +99,10 @@ def graficarCurvaRiesgo(r, Nombre_Acciones):
   plt.show()
 
 
-r = np.array([0.2,0.1,0.2,0.3])  ## vector de retornos esperados que no se como calcular (aun)
-Nombre_Acciones = ['CIB','AAPL','CL=F','GC=F']
+if __name__=='__main':
+  r = np.array([0.2,0.1,0.2,0.3])  ## vector de retornos esperados que no se como calcular (aun)
+  Nombre_Acciones = ['CIB','AAPL','CL=F','GC=F']
 
-graficarCurvaRiesgo(r,Nombre_Acciones)
+  graficarCurvaRiesgo(r,Nombre_Acciones)
 
   
