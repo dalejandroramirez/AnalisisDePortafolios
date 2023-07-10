@@ -12,7 +12,7 @@ from scipy.optimize import minimize
 
 # Nombre_Acciones : Son los nombres de las acciones dadas por yfinance
 
-# r = np.array([0.2,0.1,0.2,0.3])  ## vector de retornos esperados que no se como calcular
+# r = np.array([0.2,0.1,0.2,0.3])  ## vector de retornos esperados
 
 # Nombre_Acciones = ['CIB','AAPL','CL=F','GC=F','EURUSD=X']
 
@@ -27,7 +27,7 @@ class MiPortafolio:
     Retornos=pd.DataFrame()
     for accion_name in self.acciones:
       accion = yf.Ticker(accion_name)
-      Retornos[accion_name] = accion.history(period="3mo", interval="1d")[['Close']].pct_change()[1:]
+      Retornos[accion_name] = accion.history(period="1mo", interval="1d")[['Close']].pct_change()[1:]
     return(Retornos)
 
   def retornoMedio(self):
@@ -65,15 +65,20 @@ class MiPortafolio:
     rango = tuple((0, 1) for i in range(len(self.retornos)))
 
     # Solución de la optimización
-    w0 = np.ones(len(self.retornos)) / len(self.retornos) # Punto inicial de la optimización
+    
+    w0 = np.ones(len(self.retornos)) / len(self.retornos) ## Punto inicial de la optimización
+    
 
     result = minimize(self.sigma, w0, args=(Rho,), method='SLSQP', constraints=restriccion, bounds=rango)
     return(result)
 
   def sigmaMin(self):
     minima = self.minimizar()
-    print(f'La minima varianza dado que R = {self.R} es {minima.fun}')
-    return minima.fun
+    if minima.success:
+      print(f'La minima varianza dado que R = {self.R} es {minima.fun}')
+      return minima.fun
+    else:
+      print(f'El algoritmo con R={self.R} no converge')
 
   def parametros(self):
     minima = self.minimizar()
@@ -81,7 +86,7 @@ class MiPortafolio:
     return minima.x.round(4)
 
   def export_csv(self):
-    rango = np.linspace(0.1, 0.3, 100)
+    rango = np.linspace(0.01, 0.3, 100)
     volatilidad = [self.sigmaMin(x,r,Nombre_Acciones) for x in rango]
     df = pd.DataFrame(volatilidad,rango)
     df.to_csv('data/portafolio2',index=False)
@@ -93,7 +98,9 @@ def graficarCurvaRiesgo(r, Nombre_Acciones):
     return (2*a*xo+b)*x + cdt
 
   # Generar un rango de valores de retorno esperado
-  rango = np.linspace(0.1, 0.3, 20)
+  minimo = np.min(r)
+  maximo = np.max(r)
+  rango = np.linspace(minimo, maximo, 20)
 
   volatilidad = [MiPortafolio(R=x,r = r,Nombre_Acciones=Nombre_Acciones).sigmaMin() for x in rango]
 
