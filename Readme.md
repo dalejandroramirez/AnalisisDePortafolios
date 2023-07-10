@@ -11,9 +11,4 @@ Los resultados del analisis se consolidaron en el archivo portafolio optimo. El 
 * La clase **MiPortafolio** basta con ingresarle en nombre de la accion, el rendimiento esperado $R$ 
 y por el momento, aunque posteriormente se modificará se debe ingresar el valor esperado de cada acción (esto se podria calcular apriori de  la lista, de retornos de cada accion, pero dado que la serie no es estacionaria, considero que esta media es poco acertada, y deseo conseguir un mejor estimador insesgado)
 
-* la funcion **graficarCurvaRiesgo** va a graficar la curva de riego y ademas de ajustar un polinomio cuadratico. Esto con el fin de mas adelante encontrar la ecuación de la recta tangente a la curva que sea mas proxima al valor de un CDT
-
-
-
-
-
+* la funcion **graficarCurvaRiesgo** va a graficar la curva de riego y ademas de ajustar un polinomio cuadratico. Esto con el fin de mas adelante encontrar la ecuación de la recta tangente a la curva que sea mas proxima al valor de un CDT.

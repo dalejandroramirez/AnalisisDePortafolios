@@ -12,12 +12,13 @@ from scipy.optimize import minimize
 
 # Nombre_Acciones : Son los nombres de las acciones dadas por yfinance
 
-r = np.array([0.2,0.1,0.2,0.3])  ## vector de retornos esperados que no se como calcular
-Nombre_Acciones = ['CIB','AAPL','CL=F','GC=F']
+# r = np.array([0.2,0.1,0.2,0.3])  ## vector de retornos esperados que no se como calcular
+
+# Nombre_Acciones = ['CIB','AAPL','CL=F','GC=F','EURUSD=X']
 
 class MiPortafolio:
 
-  def __init__(self,R,r,Nombre_Acciones):
+  def __init__(self,R,Nombre_Acciones, r = np.array([0.2,0.1,0.2,0.3]) ):
     self.R = R
     self.retornos = r
     self.acciones = Nombre_Acciones
@@ -26,8 +27,15 @@ class MiPortafolio:
     Retornos=pd.DataFrame()
     for accion_name in self.acciones:
       accion = yf.Ticker(accion_name)
-      Retornos[accion_name] = accion.history(period="2y", interval="1wk")[['Close']].pct_change()[1:]
+      Retornos[accion_name] = accion.history(period="3mo", interval="1d")[['Close']].pct_change()[1:]
     return(Retornos)
+
+  def retornoMedio(self):
+    retornosMatriz = self.matriz_retornos()
+    return(np.array(retornosMatriz.mean()).round(3))
+
+  def swapRetornoEsperado(self, nuevoRetorno):
+    self.r = nuevoRetorno
 
   def matriz_covarianza(self):
     Rho, _ = spearmanr(self.matriz_retornos(), axis=0)
@@ -71,38 +79,73 @@ class MiPortafolio:
     minima = self.minimizar()
     print(f'Los parametros para divercificar el portafolio es: \n {minima.x.round(4)}')
     return minima.x.round(4)
-  
+
+  def export_csv(self):
+    rango = np.linspace(0.1, 0.3, 100)
+    volatilidad = [self.sigmaMin(x,r,Nombre_Acciones) for x in rango]
+    df = pd.DataFrame(volatilidad,rango)
+    df.to_csv('data/portafolio2',index=False)
 
 
 def graficarCurvaRiesgo(r, Nombre_Acciones):  
+  
+  def rectaTan(x,xo,a,b,cdt):
+    return (2*a*xo+b)*x + cdt
+
   # Generar un rango de valores de retorno esperado
-  rango = np.linspace(0.1, 0.3, 100)
+  rango = np.linspace(0.1, 0.3, 20)
+
+  volatilidad = [MiPortafolio(R=x,r = r,Nombre_Acciones=Nombre_Acciones).sigmaMin() for x in rango]
 
 
-  volatilidad = [MiPortafolio(x,r,Nombre_Acciones).sigmaMin() for x in rango]
   ## Ajuste cuadratico
   coef = np.polyfit(rango, volatilidad, 2)
   p = np.poly1d(coef)
   print('Los coeficientes del polinomio ajustado son:\n ',coef) 
-
   
-  plt.plot(volatilidad, rango,'o-',label='Datos')
-  plt.plot(p(rango),rango, 'r-', label='Curva ajustada')
+  a = coef[0]
+  b = coef[1]
+  c = coef[2]
+  cdt = 0.06
+  xo= np.sqrt((c-cdt)/a)
+  yo= p(xo)
 
-  plt.plot(p(rango),rango, 'r-', label='Curva ajustada')
-  
+  ## Parametros del punto critico
+  pts = MiPortafolio(R=xo,r = r,Nombre_Acciones=Nombre_Acciones).parametros()
+
+
+  fig ,ax = plt.subplots(figsize=(8,10))
+
+  ## Grafica de datos
+
+  ax.plot(volatilidad, rango,'o-',label='Datos')
+  ax.plot(p(rango),rango, 'r-', label='Curva ajustada')
+
+  ## Grafica de la recta tangente
+  ax.scatter(yo,xo)  
+  ax.plot(rectaTan(rango,xo,a,b,cdt),rango, 'g-', label=f'Recta Tangente en: {xo.round(3),yo.round(3) }')
+
   plt.xlabel('Volatilidad')
   plt.ylabel('Retorno Esperado')
-  plt.title('Frontera Eficiente')
-  plt.axhline(y=0.06, color='r', linestyle='-',label='CDF')
-  plt.legend()
+  plt.title('Frontera Eficientes')
+
+  # Eje del cdt
+  plt.axhline(y=0.06, color='r', linestyle='--',label='CDT')
+  
+  plt.subplots_adjust(bottom=0.4)
+  
+  legenda = r'Porcentaje para cada accion:' + f'\n \n({[(pts[x], Nombre_Acciones[x]) for x in range(len(Nombre_Acciones))]}) \n'
+  ax.legend(bbox_to_anchor=(0.5, -0.7),loc='lower center',fontsize='medium', title=legenda )
+
   plt.show()
 
 
-if __name__=='__main':
-  r = np.array([0.2,0.1,0.2,0.3])  ## vector de retornos esperados que no se como calcular (aun)
+if __name__=='__main__':
+  
+  r = np.array([0.2,0.1,0.2,0.3])  ## vector de retornos
+
   Nombre_Acciones = ['CIB','AAPL','CL=F','GC=F']
 
-  graficarCurvaRiesgo(r,Nombre_Acciones)
+  graficarCurvaRiesgo(r = r, Nombre_Acciones=Nombre_Acciones)
 
   
